@@ -221,14 +221,15 @@ const UserListTable = ({ tableData }) => {
           <TableFilters setData={setData} tableData={tableData.users} />
           <Divider />
           <div className='flex justify-between p-5 gap-4 flex-col items-start sm:flex-row sm:items-center'>
-            <Button
+            <div className='is-full sm:is-auto'></div>
+            {/* <Button
               color='secondary'
               variant='outlined'
               startIcon={<i className='ri-upload-2-line text-xl' />}
               className='is-full sm:is-auto'
             >
               Export
-            </Button>
+            </Button> */}
             <div className='flex items-center gap-x-4 is-full gap-4 flex-col sm:is-auto sm:flex-row'>
               <DebouncedInput
                 value={globalFilter ?? ''}

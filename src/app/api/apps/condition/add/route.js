@@ -6,10 +6,11 @@ const db = new PrismaClient();
 export const POST = async (req) => {
     try {
         const data = await req.json();
-        const user = await db.user.create({
+        const condition = await db.condition.create({
             data: data,
         });
-        return NextResponse.json({ user, status: 200 })
+        console.log(condition)
+        return NextResponse.json({ condition, status: 200 })
     } catch (error) {
         console.log(error);
     }

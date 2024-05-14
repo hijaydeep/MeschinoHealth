@@ -7,20 +7,28 @@ const db = new PrismaClient();
 export const POST = async (req) => {
     try {
         const data = await req.formData();
-        let path = '';
+
+        let thumbnailPath = null;
 
         const image = data.get('thumbnail');
+
         if (image) {
             const bytes = await image.arrayBuffer();
             const buffer = Buffer.from(bytes);
-            path = `public/uploads/articles/${image.name}`;
-            await writeFile(path, buffer);
+            const Path = `public/uploads/articles/${image.name}`;
+            await writeFile(Path, buffer);
+            thumbnailPath = Path;
+        }
+        else {
+            thumbnailPath = '/public/uploads/articles/no-image.jpg';
         }
 
         const topic = data.get('topic');
         const source = data.get('source');
         const author = data.get('author');
         const youtubeLink = data.get('youtubeLink');
+        const condition = data.get('condition');
+        const status = data.get('status');
         const shortDescription = data.get('shortDescription');
         const longDescription = data.get('longDescription');
 
@@ -28,19 +36,19 @@ export const POST = async (req) => {
             topic: topic,
             source: source,
             author: author,
+            status: status,
             youtubeLink: youtubeLink,
+            condition: condition,
             shortDescription: shortDescription,
             longDescription: longDescription,
-            thumbnail: path,
+            thumbnail: thumbnailPath,
         };
 
         const user = await db.nmu.create({
             data: articleData,
         });
-        console.log(user)
-        return NextResponse.json({ user, status: 200 })
+        return NextResponse.json({ user })
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: 'Failed to add article', status: 500 });
+        console.log(error);
     }
 };

@@ -1,22 +1,22 @@
 'use client';
-
+ 
 import React, { useState, useEffect } from "react";
 import Grid from '@mui/material/Grid'
 import HorizontalWithSubtitle from '@components/card-statistics/HorizontalWithSubtitle'
-
-const UserListCards = () => {
-
+ 
+const ConditionListCards = () => {
+ 
   const [userCounts, setUserCounts] = useState({
     totalUsers: 0,
     activeUsers: 0,
     inactiveUsers: 0,
     pendingUsers: 0
   });
-
+ 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch('/api/apps/user/list');
+        const res = await fetch('/api/apps/condition/list');
         if (res.status === 200) {
           const data = await res.json();
           const totalUsers = data.users.filter(user => user.status).length;
@@ -30,55 +30,58 @@ const UserListCards = () => {
             pendingUsers
           });
         }
-
+ 
       } catch (error) {
         console.error('Error fetching categories:', error);
       }
     };
-
+ 
     fetchUsers();
   }, []);
-
+ 
   // Vars
   const data = [
     {
-      title: 'All Users',
+      title: 'All',
       value: userCounts.totalUsers.toLocaleString(),
       avatarIcon: 'ri-group-line',
       avatarColor: 'primary',
       // change: 'positive',
       // changeNumber: '29%',
-      subTitle: 'Total User'
+      subTitle: 'Total Condition'
     },
+
     {
-      title: 'Active Users',
+      title: 'Published Condition',
       value: userCounts.activeUsers.toLocaleString(),
       avatarIcon: 'ri-user-follow-line',
       avatarColor: 'success',
       // change: 'negative',
       // changeNumber: '14%',
-      subTitle: 'Active Users'
+      subTitle: 'Published Condition'
     },
+
     {
-      title: 'Inactive Users',
-      value: userCounts.inactiveUsers.toLocaleString(),
-      avatarIcon: 'ri-user-add-line',
-      avatarColor: 'error',
-      // change: 'positive',
-      // changeNumber: '18%',
-      subTitle: 'Inactive Users'
-    },
-    {
-      title: 'Pending Users',
+      title: 'Pending Condition',
       value: userCounts.pendingUsers.toLocaleString(),
       avatarIcon: 'ri-user-search-line',
       avatarColor: 'warning',
       // change: 'positive',
       // changeNumber: '42%',
-      subTitle: 'Pending User'
+      subTitle: 'Pending Condition'
+    },
+
+    {
+      title: 'Inactive Condition',
+      value: userCounts.inactiveUsers.toLocaleString(),
+      avatarIcon: 'ri-user-add-line',
+      avatarColor: 'error',
+      // change: 'positive',
+      // changeNumber: '18%',
+      subTitle: 'Inactive Condition'
     }
   ]
-
+ 
   return (
     <Grid container spacing={6}>
       {data.map((item, i) => (
@@ -89,5 +92,5 @@ const UserListCards = () => {
     </Grid>
   )
 }
-
-export default UserListCards;
+ 
+export default ConditionListCards;

@@ -8,7 +8,16 @@ import {
   Divider,
   IconButton,
   Typography,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from '@mui/material';
+import { EditorState, ContentState, convertToRaw, convertFromHTML } from 'draft-js';
+import { Editor } from 'react-draft-wysiwyg';
+import draftToHtml from 'draftjs-to-html';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import '@core/styles/editor.css';
 
 export const dynamic = 'force-dynamic'
 
@@ -20,13 +29,35 @@ const EditArticles = () => {
     topic: '',
     source: '',
     author: '',
+    condition: '',
     thumbnail: '',
     youtubeLink: '',
-    shortDescription: '',
-    longDescription: '',
+    status: '',
+    shortDescription: EditorState.createEmpty(),
+    longDescription: EditorState.createEmpty(),
   });
 
   const [imageDeleted, setImageDeleted] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/apps/articles/categories'); // Endpoint to fetch categories
+        if (response.status === 200) {
+          const data = await response.json();
+          const categoryNames = data.categories.map(category => category.name);
+          setCategories(categoryNames);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +65,18 @@ const EditArticles = () => {
       try {
         const res = await fetch(`http://localhost:3000/api/apps/articles/${id}`);
         const data = await res.json();
-        setArticleData(data.article);
+
+        const shortDescriptionBlocks = convertFromHTML(data.article.shortDescription);
+        const shortDescriptionContentState = ContentState.createFromBlockArray(shortDescriptionBlocks);
+
+        const longDescriptionBlocks = convertFromHTML(data.article.longDescription);
+        const longDescriptionContentState = ContentState.createFromBlockArray(longDescriptionBlocks);
+
+        setArticleData({
+          ...data.article,
+          shortDescription: EditorState.createWithContent(shortDescriptionContentState),
+          longDescription: EditorState.createWithContent(longDescriptionContentState),
+        });
       } catch (error) {
         console.error('Error fetching article data:', error);
       }
@@ -42,10 +84,12 @@ const EditArticles = () => {
     fetchData();
   }, [params.id]);
 
-console.log(articleData.thumbnail)
-
   const handleChange = (e) => {
     setArticleData({ ...articleData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditorChange = (field, editorState) => {
+    setArticleData({ ...articleData, [field]: editorState });
   };
 
   const handleBack = () => {
@@ -57,7 +101,6 @@ console.log(articleData.thumbnail)
     if (file) {
       setArticleData({ ...articleData, thumbnail: file });
     }
-    console.log(file)
   };
 
   const handleDeleteImage = async (e) => {
@@ -71,7 +114,6 @@ console.log(articleData.thumbnail)
         if (res.ok) {
           setArticleData({ ...articleData, thumbnail: '' });
           setImageDeleted(true);
-          console.log('Image deleted successfully');
         } else {
           console.error('Error deleting image');
         }
@@ -91,9 +133,11 @@ console.log(articleData.thumbnail)
       formData.append('topic', articleData.topic);
       formData.append('source', articleData.source);
       formData.append('author', articleData.author);
+      formData.append('condition', articleData.condition);
       formData.append('youtubeLink', articleData.youtubeLink);
-      formData.append('shortDescription', articleData.shortDescription);
-      formData.append('longDescription', articleData.longDescription);
+      formData.append('status', articleData.status);
+      formData.append('shortDescription', draftToHtml(convertToRaw(articleData.shortDescription.getCurrentContent())));
+      formData.append('longDescription', draftToHtml(convertToRaw(articleData.longDescription.getCurrentContent())));
       formData.append('thumbnail', articleData.thumbnail);
 
       const res = await fetch(`/api/apps/articles/${params.id}`, {
@@ -155,28 +199,69 @@ console.log(articleData.thumbnail)
             value={articleData.youtubeLink}
             onChange={handleChange}
           />
-          <TextField
-            label='Short Description'
-            name='shortDescription'
-            type="textarea"
-            fullWidth
-            placeholder='Enter Short Description...'
-            value={articleData.shortDescription}
-            onChange={handleChange}
-          />
-          <TextField
-            label='Long Description'
-            name='longDescription'
-            type="textarea"
-            fullWidth
-            placeholder='Enter Long Description...'
-            value={articleData.longDescription}
-            onChange={handleChange}
-          />
+          <FormControl fullWidth>
+            <InputLabel id="status-select">Select Category</InputLabel>
+            <Select
+              fullWidth
+              name="condition"
+              id="select-status"
+              label="Select Category"
+              value={articleData.condition}
+              onChange={handleChange}
+              labelId="status-select"
+            >
+              <MenuItem value="" disabled>
+                Select Category
+              </MenuItem>
+              {categories.map((categoryName) => (
+                <MenuItem key={categoryName} value={categoryName}>
+                  {categoryName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <div className="flex flex-col space-y-2">
+            <label className="text-gray-700 font-medium">
+              Short Description:
+            </label>
+            <Editor
+              editorState={articleData.shortDescription}
+              toolbarClassName='toolbar'
+              wrapperClassName='wrapper'
+              editorClassName='editor'
+              onEditorStateChange={(editorState) => handleEditorChange('shortDescription', editorState)}
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <label className="text-gray-700 font-medium">
+              Long Description:
+            </label>
+            <Editor
+              editorState={articleData.longDescription}
+              toolbarClassName='toolbar'
+              editorClassName='editor'
+              onEditorStateChange={(editorState) => handleEditorChange('longDescription', editorState)}
+            />
+          </div>
+          <FormControl>
+            <InputLabel id='plan-select'>Select Status</InputLabel>
+            <Select
+              fullWidth
+              id='select-status'
+              name='status'
+              value={articleData.status}
+              onChange={handleChange}
+              label='Select Status'
+            >
+              <MenuItem value='pending'>Pending</MenuItem>
+              <MenuItem value='active'>Active</MenuItem>
+              <MenuItem value='inactive'>Inactive</MenuItem>
+            </Select>
+          </FormControl>
           {!imageDeleted && (
             <div className='p-1 relative'>
               <img
-                src={articleData.thumbnail.substring(6)}
+                src={articleData.thumbnail ? articleData.thumbnail.substring(6) : ''}
                 width={250}
                 height={180}
                 alt="Article Thumbnail"

@@ -29,9 +29,21 @@ model nmu {
   topic            String
   source           String
   author           String
+  condition        String
   thumbnail        String?
   youtubeLink      String?
   shortDescription String
   longDescription  String
+  status           String
+  createdAt        DateTime @default(now())
+}
+
+model Condition {
+  id               Int      @id @default(autoincrement())
+  topic            String
+  name             String
+  description      String
+  topicDescription String?
+  status           String
   createdAt        DateTime @default(now())
 }

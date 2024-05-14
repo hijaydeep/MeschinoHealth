@@ -25,7 +25,7 @@
     "@mui/lab": "5.0.0-alpha.160",
     "@mui/material": "5.15.4",
     "@mui/material-nextjs": "5.15.3",
-    "@prisma/client": "^5.11.0",
+    "@prisma/client": "^5.13.0",
     "@tanstack/match-sorter-utils": "^8.11.8",
     "@tanstack/react-table": "^8.16.0",
     "@vercel/blob": "^0.22.3",
@@ -65,6 +65,6 @@
   },
   "devDependencies": {
     "@types/react-draft-wysiwyg": "^1.13.8",
-    "prisma": "^5.11.0"
+    "prisma": "^5.13.0"
   }
 }

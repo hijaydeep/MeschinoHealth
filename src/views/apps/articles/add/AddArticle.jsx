@@ -1,29 +1,62 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import {
   Button,
   TextField,
   Divider,
   IconButton,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControl,
   Typography
 } from '@mui/material';
+import { EditorState, convertToRaw } from 'draft-js';
+import { Editor } from 'react-draft-wysiwyg';
+import draftToHtml from 'draftjs-to-html';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
+import '@core/styles/editor.css';
 
 export const dynamic = 'force-dynamic'
+
+const initialData = {
+  topic: '',
+  source: '',
+  author: '',
+  condition: '',
+  thumbnail: '',
+  youtubeLink: '',
+  shortDescription: EditorState.createEmpty(),
+  longDescription: EditorState.createEmpty(),
+  status: '',
+}
 
 const MyArticles = () => {
 
   const router = useRouter();
-  const [articleData, setArticleData] = useState({
-    topic: '',
-    source: '',
-    author: '',
-    thumbnail: '',
-    youtubeLink: '',
-    shortDescription: '',
-    longDescription: '',
-  });
+  const [articleData, setArticleData] = useState(initialData);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/apps/articles/categories'); // Endpoint to fetch categories
+        if (response.status === 200) {
+          const data = await response.json();
+          const categoryNames = data.categories.map(category => category.name);
+          setCategories(categoryNames);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     setArticleData({ ...articleData, [e.target.name]: e.target.value });
@@ -36,16 +69,12 @@ const MyArticles = () => {
     }
   };
 
+  const handleEditorChange = (field, editorState) => {
+    setArticleData({ ...articleData, [field]: editorState });
+  };
+
   const handleBack = () => {
-    setArticleData({
-      topic: '',
-      source: '',
-      author: '',
-      thumbnail: '',
-      youtubeLink: '',
-      shortDescription: '',
-      longDescription: '',
-    });
+    setArticleData(initialData);
     router.push('/apps/articles/list');
   };
 
@@ -57,16 +86,17 @@ const MyArticles = () => {
       formData.append('topic', articleData.topic);
       formData.append('source', articleData.source);
       formData.append('author', articleData.author);
+      formData.append('condition', articleData.condition);
       formData.append('youtubeLink', articleData.youtubeLink);
-      formData.append('shortDescription', articleData.shortDescription);
-      formData.append('longDescription', articleData.longDescription);
+      formData.append('status', articleData.status);
       formData.append('thumbnail', articleData.thumbnail);
+      formData.append('shortDescription', draftToHtml(convertToRaw(articleData.shortDescription.getCurrentContent())));
+      formData.append('longDescription', draftToHtml(convertToRaw(articleData.longDescription.getCurrentContent())));
 
       const res = await fetch('/api/apps/articles/add', {
         method: "POST",
         body: formData,
       });
-      console.log(res)
       if (res.ok) {
         router.push('/apps/articles/list');
       } else {
@@ -112,12 +142,6 @@ const MyArticles = () => {
             value={articleData.source}
             onChange={handleChange}
           />
-          {/* <label className="form-label">Upload Thumbnail</label>
-          <input className="form-control img-thumbnail bg-gray-100"
-            type="file"
-            name="thumbnail"
-            onChange={handleImage}
-          /> */}
           <div className="flex flex-col space-y-2">
             <label htmlFor="fileUpload" className="text-gray-700 font-medium">
               Select file to upload:
@@ -129,14 +153,6 @@ const MyArticles = () => {
               onChange={handleImage}
             />
           </div>
-          {/* <div className="flex items-center justify-center h-16 w-full bg-gray-200 rounded cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              name="thumbnail"
-              onChange={handleImage}
-            />
-          </div> */}
           <TextField
             label='YouTube Video Link'
             name='youtubeLink'
@@ -146,24 +162,64 @@ const MyArticles = () => {
             value={articleData.youtubeLink}
             onChange={handleChange}
           />
-          <TextField
-            label='Short Description'
-            name='shortDescription'
-            type="textarea"
-            fullWidth
-            placeholder='Enter Short Description...'
-            value={articleData.shortDescription}
-            onChange={handleChange}
-          />
-          <TextField
-            label='Long Description'
-            name='longDescription'
-            type="textarea"
-            fullWidth
-            placeholder='Enter Long Description...'
-            value={articleData.longDescription}
-            onChange={handleChange}
-          />
+          <FormControl fullWidth>
+            <InputLabel id="status-select">Select Category</InputLabel>
+            <Select
+              fullWidth
+              name="condition"
+              id='select-status'
+              label="Select Category"
+              value={articleData.condition}
+              onChange={handleChange}
+              labelId="status-select"
+              inputProps={{ placeholder: "Select Category" }}
+            >
+              <MenuItem value="" disabled>Select Category</MenuItem>
+              {categories.length > 0 &&
+                categories.map((categoryName) => (
+                  <MenuItem key={categoryName} value={categoryName}>
+                    {categoryName}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+          <div className="flex flex-col space-y-2">
+            <label className="text-gray-700 font-medium">
+              Short Description:
+            </label>
+            <Editor
+              editorState={articleData.shortDescription}
+              toolbarClassName='toolbar'
+              editorClassName='editor'
+              onEditorStateChange={(editorState) => handleEditorChange('shortDescription', editorState)}
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <label className="text-gray-700 font-medium">
+              Long Description:
+            </label>
+            <Editor
+              editorState={articleData.longDescription}
+              toolbarClassName='toolbar'
+              editorClassName='editor'
+              onEditorStateChange={(editorState) => handleEditorChange('longDescription', editorState)}
+            />
+          </div>
+          <FormControl>
+            <InputLabel id='plan-select'>Select Status</InputLabel>
+            <Select
+              fullWidth
+              id='select-status'
+              name='status'
+              value={articleData.status}
+              onChange={handleChange}
+              label='Select Status'
+            >
+              <MenuItem value='pending'>Pending</MenuItem>
+              <MenuItem value='active'>Active</MenuItem>
+              <MenuItem value='inactive'>Inactive</MenuItem>
+            </Select>
+          </FormControl>
           <div className='flex items-center gap-4'>
             <Button variant='contained' type='submit'>
               Submit

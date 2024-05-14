@@ -5,7 +5,6 @@ import { unlink } from 'fs/promises';
 const db = new PrismaClient();
 
 export const DELETE = async (req, { params }) => {
-    console.log('jaydeep')
     const id = parseInt(params.id);
     try {
         const article = await db.nmu.findUnique({
@@ -28,7 +27,6 @@ export const DELETE = async (req, { params }) => {
             return NextResponse.json({ error: 'Article not found', status: 404 });
         }
     } catch (error) {
-        console.error('Error deleting image:', error);
-        return NextResponse.json({ message: 'Error deleting image', status: 500 });
+        console.log(error);
     }
 };

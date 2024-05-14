@@ -69,13 +69,9 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </SubMenu>
 
-        <SubMenu label='User' icon={<i className='ri-user-line' />}>
-          <MenuItem href='/apps/user/list'>List</MenuItem>
-        </SubMenu>
-
-        <SubMenu label='Articles' icon={<i className='ri-article-line' />}>
-          <MenuItem href='/apps/articles/list'>List</MenuItem>
-        </SubMenu>
+        <MenuItem label='User' icon={<i className='ri-user-line' />} href='/apps/user/list'>User</MenuItem>
+        <MenuItem label='Articles' icon={<i className='ri-article-line' />} href='/apps/articles/list'>Article</MenuItem>
+        <MenuItem label='Condition' icon={<i className='ri-book-line' />} href='/apps/condition/list'>Condition</MenuItem>
       </Menu>
       {/* <Menu
           popoutMenuOffset={{ mainAxis: 10 }}

@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
 
 const db = new PrismaClient();
 
@@ -10,17 +9,7 @@ export const GET = async (req, { params }) => {
     try {
         const article = await db.nmu.findUnique({
             where: { id: id },
-            select: {
-                topic: true,
-                source: true,
-                author: true,
-                thumbnail: true,
-                youtubeLink: true,
-                shortDescription: true,
-                longDescription: true
-            }
         });
-        console.log(article)
         if (article) {
             return NextResponse.json({ article, status: 200 });
         } else {
@@ -40,52 +29,51 @@ export const PUT = async (req, { params }) => {
         const source = data.get('source');
         const author = data.get('author');
         const youtubeLink = data.get('youtubeLink');
+        const condition = data.get('condition');
         const shortDescription = data.get('shortDescription');
         const longDescription = data.get('longDescription');
-
-        const image = data.get('thumbnail');
-        const bytes = await image.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const newImagePath = `public/uploads/articles/${image.name}`;
-        await writeFile(newImagePath, buffer);
-
-        if (data.has('thumbnail')) {
-            const article = await db.nmu.findUnique({ where: { id: id } });
-            if (article && article.thumbnail) {
-                await unlink(join(process.cwd(), article.thumbnail));
-            }
-        }
+        const status = data.get('status');
 
         const updatedArticle = {
             topic: topic,
             source: source,
             author: author,
             youtubeLink: youtubeLink,
+            condition: condition,
             shortDescription: shortDescription,
             longDescription: longDescription,
-            thumbnail: newImagePath,
+            status: status,
         };
 
+        const thumbnail = data.get('thumbnail');
+        if (thumbnail instanceof File) {
+            const bytes = await thumbnail.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            const newImagePath = `public/uploads/articles/${thumbnail.name}`;
+            await writeFile(newImagePath, buffer);
+            updatedArticle.thumbnail = newImagePath;
+        }
+        else if (typeof thumbnail === 'string' || null) {
+            updatedArticle.thumbnail = thumbnail;
+        }
         const updateduser = await db.nmu.update({
             where: { id: id },
             data: updatedArticle,
         });
-        console.log(updateduser)
-        return NextResponse.json({ updateduser, status: 200 });
+        const result = thumbnail instanceof File ? 201 : 200;
+        return NextResponse.json({ updateduser, result });
     } catch (error) {
         console.log(error);
     }
 }
 
 export const DELETE = async (req, { params }) => {
-    console.log('hi')
     const id = parseInt(params.id);
     try {
         const article = await db.nmu.findUnique({
             where: { id: id },
             select: { thumbnail: true }
         });
-
         if (article) {
             if (article.thumbnail) {
                 await unlink(article.thumbnail);
@@ -96,6 +84,6 @@ export const DELETE = async (req, { params }) => {
             return NextResponse.json({ error: 'Article not found', status: 404 });
         }
     } catch (error) {
-        console.error(error);
+        console.log(error);
     }
 };

@@ -9,12 +9,11 @@ import {
   Button,
   TextField,
   Typography,
+  Chip,
   Checkbox,
   IconButton,
-  TablePagination,
-  Chip
+  TablePagination
 } from '@mui/material';
-
 import classnames from 'classnames';
 import { rankItem } from '@tanstack/match-sorter-utils';
 import {
@@ -29,8 +28,11 @@ import {
   getPaginationRowModel,
   getSortedRowModel
 } from '@tanstack/react-table';
+import CustomAvatar from '@core/components/mui/Avatar';
+import { getInitials } from '@/utils/getInitials';
 import tableStyles from '@core/styles/table.module.css';
 import TableFilters from './TableFilters';
+
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem(row.getValue(columnId), value);
@@ -49,8 +51,8 @@ const DebouncedInput = ({ value: initialValue, onChange, ...props }) => {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      onChange(value)
-    }, 500)
+      onChange(value);
+    }, 500);
 
     return () => clearTimeout(timeout);
   }, [value]);
@@ -66,7 +68,7 @@ const userStatusObj = {
 
 const columnHelper = createColumnHelper()
 
-const ArticleListTable = ({ tableData }) => {
+const ConditionListTable = ({ tableData }) => {
 
   const [data, setData] = useState([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -80,7 +82,7 @@ const ArticleListTable = ({ tableData }) => {
 
   const handleDelete = async (userId) => {
 
-    const res = await fetch(`http://localhost:3000/api/apps/articles/${userId}`, {
+    const res = await fetch(`http://localhost:3000/api/apps/condition/${userId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -94,6 +96,24 @@ const ArticleListTable = ({ tableData }) => {
       console.log('An error occurred');
     }
   };
+
+  const AvatarCell = ({ row }) => (
+    <div className='flex items-center gap-4'>
+      {row.original.avatar ? (
+        <CustomAvatar src={row.original.avatar} skin='light' size={34} />
+      ) : (
+        <CustomAvatar skin='light' size={34}>
+          {getInitials(row.original.name)}
+        </CustomAvatar>
+      )}
+      <div className='flex flex-col'>
+        <Typography className='font-medium' color='text.primary'>
+          {row.original.name}
+        </Typography>
+        {/* <Typography variant='body2'>{row.original.username}</Typography> */}
+      </div>
+    </div>
+  );
 
   const StatusCell = ({ row }) => (
     <div className='flex items-center gap-3'>
@@ -127,18 +147,18 @@ const ArticleListTable = ({ tableData }) => {
           />
         )
       },
-      columnHelper.accessor('author', {
-        header: 'Author',
-        cell: ({ row }) => <Typography>{row.original.author}</Typography>
+      columnHelper.accessor('name', {
+        header: 'Condition',
+        cell: AvatarCell,
       }),
-      columnHelper.accessor('topic', {
-        header: 'Topic',
-        cell: ({ row }) => <Typography>{row.original.topic}</Typography>
+      columnHelper.accessor('createdAt', {
+        header: 'Date',
+        cell: ({ row }) => <Typography >{row.original.createdAt}</Typography>
       }),
-      columnHelper.accessor('source', {
-        header: 'Source',
-        cell: ({ row }) => <Typography>{row.original.source}</Typography>
-      }),
+      // columnHelper.accessor('email', {
+      //   header: 'Email',
+      //   cell: ({ row }) => <Typography>{row.original.email}</Typography>
+      // }),
       columnHelper.accessor('status', {
         header: 'Status',
         cell: StatusCell,
@@ -151,12 +171,12 @@ const ArticleListTable = ({ tableData }) => {
               <i className='ri-delete-bin-7-line text-[22px] text-textSecondary' />
             </IconButton>
             <IconButton>
-              <Link href='apps/articles/view' className='flex'>
+              <Link href='apps/condition/view' className='flex'>
                 <i className='ri-eye-line text-[22px] text-textSecondary' />
               </Link>
             </IconButton>
             <IconButton>
-              <Link href={`/apps/articles/edit/${row.original.id}`} className='flex'>
+              <Link href={`/apps/condition/edit/${row.original.id}`} className='flex'>
                 <i className='ri-edit-box-line mui-fvgoc text-[22px] text-textSecondary' />
               </Link>
             </IconButton>
@@ -206,15 +226,23 @@ const ArticleListTable = ({ tableData }) => {
           <Divider />
           <div className='flex justify-between p-5 gap-4 flex-col items-start sm:flex-row sm:items-center'>
             <div className='is-full sm:is-auto'></div>
+            {/* <Button
+              color='secondary'
+              variant='outlined'
+              startIcon={<i className='ri-upload-2-line text-xl' />}
+              className='is-full sm:is-auto'
+            >
+              Export
+            </Button> */}
             <div className='flex items-center gap-x-4 is-full gap-4 flex-col sm:is-auto sm:flex-row'>
               <DebouncedInput
                 value={globalFilter ?? ''}
                 onChange={value => setGlobalFilter(String(value))}
-                placeholder='Search Author'
+                placeholder='Search Condition'
                 className='is-full sm:is-auto'
               />
-              <Link href='/apps/articles/add' className='flex'>
-                <Button variant='contained'>Add New Articles</Button>
+              <Link href='/apps/condition/add' className='flex'>
+                <Button variant='contained'>Add New Condition</Button>
               </Link>
             </div>
           </div>
@@ -247,7 +275,7 @@ const ArticleListTable = ({ tableData }) => {
                   </tr>
                 ))}
               </thead>
-              {table.getFilteredRowModel() && table.getFilteredRowModel().rows.length === 0 ? (
+              {table.getFilteredRowModel().rows.length === 0 ? (
                 <tbody>
                   <tr>
                     <td colSpan={table.getVisibleFlatColumns().length} className='text-center'>
@@ -293,4 +321,4 @@ const ArticleListTable = ({ tableData }) => {
   );
 };
 
-export default ArticleListTable
+export default ConditionListTable;
